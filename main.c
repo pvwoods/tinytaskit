@@ -76,7 +76,7 @@ void runFirstUseFlow(){
             printf("Error attempting to setup TinyTaskit\n");
         }else{
             generateKey(username, userKey);
-            printf("%s:%s\n", username, userKey);
+            fprintf(setupFile, "%s:%s\n", username, userKey);
             fclose(setupFile);
             printf("TinyTaskit has been set up.\n");
         }
