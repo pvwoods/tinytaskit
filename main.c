@@ -13,7 +13,6 @@ static void printInstructions(){
 static void convertToHex(const char* data, size_t size, unsigned char* hex) {
     int i;
     for(i = 0; i < size; ++i){
-        printf("%d\n", i);
         sprintf(hex, "%s%x%x", hex, ((unsigned char)data[i])/16, ((unsigned char)data[i])%16); 
     }
 }
