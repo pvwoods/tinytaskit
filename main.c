@@ -51,6 +51,7 @@ int isFirstRun(){
     char *home = getenv ("HOME");    
     if (home != NULL){
         snprintf(confPath, sizeof(confPath), "%s/.tinytaskit/", home);
+        sprintf(HOME_PATH, "%s", confPath);
         return directoryExists(confPath) == 1 ? 0:1;
     }
     return 1;
@@ -60,30 +61,22 @@ void runFirstUseFlow(){
 
     char username[21];
     unsigned char userKey[SHA1_DIGEST_SIZE + 1] = "";
-    char confPath[512];
     char confFile[512];
-    char *home = getenv ("HOME");
     
-    if (home != NULL){
-        snprintf(confPath, sizeof(confPath), "%s/.tinytaskit/", home);
-        snprintf(confFile, sizeof(confFile), "%s/tinytaskit.conf", confPath);
-    }else{
-        printf("could not set home variable!");
-        return;
-    }
-
+    snprintf(confFile, sizeof(confFile), "%s/tinytaskit.conf", HOME_PATH);
+    
     printf("It looks like this is your first time running TinyTaskit.\nPlease enter a user name  up to 20 characters to associate with your tasks.\nUserName: ");
 
     if(scanf("%20s", username) == 1){
         printf("Setting username as: %s\n", username);
-        mkdir(confPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        mkdir(HOME_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         FILE *setupFile;
         setupFile = fopen(confFile, "w");
         if(setupFile == NULL){
             printf("Error attempting to setup TinyTaskit\n");
         }else{
             generateKey(username, userKey);
-            fprintf(setupFile, "%s:%s\n",username, userKey);
+            fprintf(setupFile, "%s:%s\n", username, userKey);
             fclose(setupFile);
             printf("TinyTaskit has been set up.\n");
         }
