@@ -13,7 +13,7 @@ static void printInstructions(){
 static void convertToHex(const char* data, size_t size, unsigned char* hex) {
     int i;
     for(i = 0; i < size; ++i){
-        sprintf(hex, "%s%x%x", hex, ((unsigned char)data[i])/16, ((unsigned char)data[i])%16); 
+        sprintf(hex, "%s%x%x", hex, ((unsigned char)data[i])/16, ((unsigned char)data[i])%16);
     }
 }
 
@@ -59,7 +59,7 @@ int isFirstRun(){
 void runFirstUseFlow(){
 
     char username[21];
-    unsigned char userKey[SHA1_DIGEST_SIZE] = "";
+    unsigned char userKey[SHA1_DIGEST_SIZE + 1] = "";
     char confPath[512];
     char confFile[512];
     char *home = getenv ("HOME");
@@ -83,7 +83,7 @@ void runFirstUseFlow(){
             printf("Error attempting to setup TinyTaskit\n");
         }else{
             generateKey(username, userKey);
-            printf("%s:%s\n",username, userKey);
+            fprintf(setupFile, "%s:%s\n",username, userKey);
             fclose(setupFile);
             printf("TinyTaskit has been set up.\n");
         }
