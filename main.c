@@ -58,9 +58,9 @@ int isFirstRun(){
 }
 
 void runFirstUseFlow(){
-
+    
+    unsigned char userKey[512] = "";
     char username[21];
-    unsigned char userKey[SHA1_DIGEST_SIZE + 1] = "";
     char confFile[512];
     
     snprintf(confFile, sizeof(confFile), "%s/tinytaskit.conf", HOME_PATH);
@@ -76,7 +76,7 @@ void runFirstUseFlow(){
             printf("Error attempting to setup TinyTaskit\n");
         }else{
             generateKey(username, userKey);
-            fprintf(setupFile, "%s:%s\n", username, userKey);
+            printf("%s:%s\n", username, userKey);
             fclose(setupFile);
             printf("TinyTaskit has been set up.\n");
         }
