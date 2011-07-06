@@ -4,6 +4,7 @@ static void printInstructions(){
     printf("Usage: tinytaskit <command> [<args>]\n");
     printf("\nAvailable Commands:\n");
     printf("\tinit:\t\tcreate a tinytaskit instance\n");
+    printf("\tregister:\tregister yourself with an existing tinytaskit project\n");
     printf("\tadd:\t\tadd a task\n");
     printf("\tclose:\t\tclose a task as complete\n");
     printf("\tactive:\t\tlist all active tasks\n");
@@ -100,7 +101,16 @@ int loadConfig(){
     printf("loading config file\n");
     
     if(configFile != NULL){
-        if(fgets(userConfig, sizeof(userConfig), configFile) != NULL) fputs(userConfig, stdout);
+        if(fgets(rawUserConfig, sizeof(rawUserConfig), configFile) != NULL){
+            fputs(rawUserConfig, stdout);
+            char *cp;
+            char delimiter[] = ":";
+            cp = strdup(rawUserConfig);
+            config.userName = strtok(cp, delimiter);
+            config.userKey = strtok(NULL, delimiter);
+            int len = strlen(config.userKey);
+            if( config.userKey[len-1] == '\n' ) config.userKey[len-1] = 0;
+        }
         fclose(configFile);
     }
     return 1;
@@ -116,7 +126,7 @@ int command_init(){
             printf("Error attempting to init TinyTaskit\n");
             return 0;
         }else{
-            fprintf(initFile, "@tinytaskit_manifest\n@version:%s\n@user:%s", VERSION, userConfig);
+            fprintf(initFile, "@tinytaskit_manifest\n@version:%s\n@user:%s", VERSION, rawUserConfig);
             fclose(initFile);
             printf("TinyTaskit instance created\n");
             return 1;
@@ -137,7 +147,7 @@ int command_register(){
         }else{
             
             //if(){
-                fprintf(initFile, "@user:%s", userConfig);
+                fprintf(initFile, "@user:%s", rawUserConfig);
                 fclose(initFile);
                 printf("You have been registered to this tinytaskit instance.\n");
                 return 1;
@@ -152,6 +162,20 @@ int command_register(){
 }
 
 int command_add(char *task){
+    if(tinyTaskitInstanceExists() == 1){
+        char taskFilePath[512];
+        snprintf(taskFilePath, sizeof(taskFilePath), "./.tinytaskit/%s.tasks", config.userKey);
+        FILE *taskFile;
+        taskFile = fopen(taskFilePath, "a+");
+        if(taskFile == NULL){
+            printf("Error attempting to open TinyTaskit task file\n");
+            return 0;
+        }else{
+                fprintf(taskFile, "%s\n", task);
+                fclose(taskFile);
+                printf("Task Added.\n");
+        }
+    }
     return 1;
 }
 
@@ -160,6 +184,26 @@ int command_close(){
 }
 
 int command_active(){
+    if(tinyTaskitInstanceExists() == 1){
+        char taskFilePath[512];
+        char currentTask[512];
+        snprintf(taskFilePath, sizeof(taskFilePath), "./.tinytaskit/%s.tasks", config.userKey);
+        FILE *taskFile;
+        taskFile = fopen(taskFilePath, "r");
+        if(taskFile == NULL){
+            printf("Error attempting to open TinyTaskit task file\n");
+            return 0;
+        }else{
+            printf("\nCurrently Active Tasks for %s:\n\n", config.userName);
+            int i = 1;
+            while(fgets(currentTask, sizeof(currentTask), taskFile) != NULL){
+                printf("\t%d. %s", i, currentTask);
+                i++;
+                //fputs(currentTask, stdout);
+            }
+            printf("\n");
+        }
+    }
     return 1;
 }
 
@@ -176,7 +220,7 @@ int main(int argc, char *argv[]){
     if(isFirstRun() == 0){
         if(argc > 1){
             loadConfig();
-            command_register();
+            command_active();
         }else{
             printInstructions();
         }

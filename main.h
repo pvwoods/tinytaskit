@@ -6,11 +6,13 @@
 #include <string.h>
 
 typedef struct {
-    char userName[20];
-    char userKey[SHA1_DIGEST_SIZE];
+    char *userName;
+    char *userKey;
 } taskitConfigData;
 
-char userConfig[512];
+taskitConfigData config;
+
+char rawUserConfig[512];
 
 char VERSION[] = "0.1";
 
