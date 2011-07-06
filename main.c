@@ -211,8 +211,21 @@ int command_complete(){
     return 1;
 }
 
-void registerCommands(){
-    //
+int run_command(int argc, char *argv[]){
+    if(!strcmp(argv[1], "init")){
+        return command_init();
+    }else if(!strcmp(argv[1], "register")){
+        return command_register();
+    }else if(!strcmp(argv[1], "add")){
+        if(argc > 2){
+            return command_add(argv[2]);
+        }else{
+            return 0;
+        }
+    }else if(!strcmp(argv[1], "active")){
+        return command_active();
+    }
+    return 0;    
 }
 
 int main(int argc, char *argv[]){
@@ -220,7 +233,7 @@ int main(int argc, char *argv[]){
     if(isFirstRun() == 0){
         if(argc > 1){
             loadConfig();
-            command_active();
+            if(run_command(argc, argv) == 0) printInstructions();
         }else{
             printInstructions();
         }
