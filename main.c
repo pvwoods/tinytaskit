@@ -68,6 +68,13 @@ void runFirstUseFlow(){
     printf("It looks like this is your first time running TinyTaskit.\nPlease enter a user name  up to 20 characters to associate with your tasks.\nUserName: ");
 
     if(scanf("%20s", username) == 1){
+        
+        time_t epoch;
+        epoch = time(NULL);
+        
+        char keyFeed[31];
+        snprintf(keyFeed, sizeof(keyFeed), "%s%ju", username, (uintmax_t)epoch);
+        
         printf("Setting username as: %s\n", username);
         mkdir(HOME_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         FILE *setupFile;
@@ -75,7 +82,7 @@ void runFirstUseFlow(){
         if(setupFile == NULL){
             printf("Error attempting to setup TinyTaskit\n");
         }else{
-            generateKey(username, userKey);
+            generateKey(keyFeed, userKey);
             fprintf(setupFile, "%s:%s\n", username, userKey);
             fclose(setupFile);
             printf("TinyTaskit has been set up.\n");
@@ -84,6 +91,18 @@ void runFirstUseFlow(){
 }
 
 int loadConfig(){
+    
+    char configFilePath[512];
+    snprintf(configFilePath, sizeof(configFilePath), "%s/tinytaskit.conf", HOME_PATH);
+    
+    FILE *configFile = fopen(configFilePath, "r");
+    
+    printf("loading config file\n");
+    
+    if(configFile != NULL){
+        if(fgets(userConfig, sizeof(userConfig), configFile) != NULL) fputs(userConfig, stdout);
+        fclose(configFile);
+    }
     return 1;
 }
     
@@ -97,6 +116,7 @@ int command_init(){
             printf("Error attempting to init TinyTaskit\n");
             return 0;
         }else{
+            fprintf(initFile, "@tinytaskit_manifest\n@version:%s\n@user:%s", VERSION, userConfig);
             fclose(initFile);
             printf("TinyTaskit instance created\n");
             return 1;
@@ -104,6 +124,30 @@ int command_init(){
 
     }
     printf("TinyTaskit instance already exists!\n");
+    return 0;
+}
+
+int command_register(){
+    if(tinyTaskitInstanceExists() == 1){
+        FILE *initFile;
+        initFile = fopen("./.tinytaskit/manifest", "a+");
+        if(initFile == NULL){
+            printf("Error attempting to open TinyTaskit manifest\n");
+            return 0;
+        }else{
+            
+            //if(){
+                fprintf(initFile, "@user:%s", userConfig);
+                fclose(initFile);
+                printf("You have been registered to this tinytaskit instance.\n");
+                return 1;
+            //}else{
+                //printf("It seems that you are already registered to this tinytaskit instance.\n");
+            //}
+        }
+        return 1;
+    }
+    printf("There is no tinytaskit instance to register yourself to!\n");
     return 0;
 }
 
@@ -128,9 +172,11 @@ void registerCommands(){
 }
 
 int main(int argc, char *argv[]){
+            
     if(isFirstRun() == 0){
         if(argc > 1){
-            command_init();
+            loadConfig();
+            command_register();
         }else{
             printInstructions();
         }
