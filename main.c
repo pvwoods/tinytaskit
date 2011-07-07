@@ -179,7 +179,32 @@ int command_add(char *task){
     return 1;
 }
 
-int command_close(){
+int command_close(int taskId){
+    if(tinyTaskitInstanceExists() == 1){
+        char taskFilePath[512];
+        char completeFilePath[512];
+        char currentTask[512];
+        snprintf(taskFilePath, sizeof(taskFilePath), "./.tinytaskit/%s.tasks", config.userKey);
+        snprintf(completeFilePath, sizeof(completeFilePath), "./.tinytaskit/%s.complete", config.userKey);
+        FILE *taskFile;
+        FILE *completeFile;
+        taskFile = fopen(taskFilePath, "rw");
+        completeFile = fopen(completeFilePath, "a+");
+        if(taskFile == NULL || completeFile == NULL){
+            printf("There was an error while attempting to complete task\n");
+            return 0;
+        }else{
+            int i = 0;
+            while(fgets(currentTask, sizeof(currentTask), taskFile) != NULL){
+                if(i == taskId){
+                    printf("closing task %d: %s", i, currentTask);
+                    fprintf(completeFile, "%s", currentTask);
+                    return 1;
+                }
+            }
+            printf("\n");
+        }
+    }
     return 1;
 }
 
@@ -208,6 +233,26 @@ int command_active(){
 }
 
 int command_complete(){
+    if(tinyTaskitInstanceExists() == 1){
+        char taskFilePath[512];
+        char currentTask[512];
+        snprintf(taskFilePath, sizeof(taskFilePath), "./.tinytaskit/%s.complete", config.userKey);
+        FILE *taskFile;
+        taskFile = fopen(taskFilePath, "r");
+        if(taskFile == NULL){
+            printf("Error attempting to open TinyTaskit completed task file\n");
+            return 0;
+        }else{
+            printf("\nCompleted Tasks for %s:\n\n", config.userName);
+            int i = 1;
+            while(fgets(currentTask, sizeof(currentTask), taskFile) != NULL){
+                printf("\t%d. %s", i, currentTask);
+                i++;
+                //fputs(currentTask, stdout);
+            }
+            printf("\n");
+        }
+    }
     return 1;
 }
 
@@ -224,6 +269,14 @@ int run_command(int argc, char *argv[]){
         }
     }else if(!strcmp(argv[1], "active")){
         return command_active();
+    }else if(!strcmp(argv[1], "complete")){
+        return command_complete();
+    }else if(!strcmp(argv[1], "close")){
+        if(argc > 2){
+            return command_close(atoi(argv[2]) - 1);
+        }else{
+            return 0;
+        }
     }
     return 0;    
 }
