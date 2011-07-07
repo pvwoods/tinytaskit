@@ -182,27 +182,37 @@ int command_add(char *task){
 int command_close(int taskId){
     if(tinyTaskitInstanceExists() == 1){
         char taskFilePath[512];
+        char tempFilePath[512];
         char completeFilePath[512];
         char currentTask[512];
         snprintf(taskFilePath, sizeof(taskFilePath), "./.tinytaskit/%s.tasks", config.userKey);
         snprintf(completeFilePath, sizeof(completeFilePath), "./.tinytaskit/%s.complete", config.userKey);
+        snprintf(tempFilePath, sizeof(tempFilePath), "./.tinytaskit/%s.temp", config.userKey);
         FILE *taskFile;
         FILE *completeFile;
+        FILE *tempFile;
         taskFile = fopen(taskFilePath, "rw");
         completeFile = fopen(completeFilePath, "a+");
-        if(taskFile == NULL || completeFile == NULL){
+        tempFile = fopen(tempFilePath, "a+");
+        if(taskFile == NULL || completeFile == NULL || tempFile == NULL){
             printf("There was an error while attempting to complete task\n");
             return 0;
         }else{
             int i = 0;
             while(fgets(currentTask, sizeof(currentTask), taskFile) != NULL){
                 if(i == taskId){
-                    printf("closing task %d: %s", i, currentTask);
+                    printf("closing task %d: %s", (i + 1), currentTask);
                     fprintf(completeFile, "%s", currentTask);
-                    return 1;
+                }else{
+                    fprintf(tempFile, "%s", currentTask);
                 }
+                i++;
             }
-            printf("\n");
+            fclose(taskFile);
+            fclose(tempFile);
+            fclose(completeFile);
+            unlink(taskFilePath);
+            rename(tempFilePath, taskFilePath);
         }
     }
     return 1;
