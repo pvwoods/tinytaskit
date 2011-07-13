@@ -184,7 +184,6 @@ int command_close(int taskId){
         char taskFilePath[512];
         char tempFilePath[512];
         char completeFilePath[512];
-        char currentTask[512];
         snprintf(taskFilePath, sizeof(taskFilePath), "./.tinytaskit/%s.tasks", config.userKey);
         snprintf(completeFilePath, sizeof(completeFilePath), "./.tinytaskit/%s.complete", config.userKey);
         snprintf(tempFilePath, sizeof(tempFilePath), "./.tinytaskit/%s.temp", config.userKey);
@@ -194,26 +193,62 @@ int command_close(int taskId){
         taskFile = fopen(taskFilePath, "rw");
         completeFile = fopen(completeFilePath, "a+");
         tempFile = fopen(tempFilePath, "a+");
-        if(taskFile == NULL || completeFile == NULL || tempFile == NULL){
-            printf("There was an error while attempting to complete task\n");
-            return 0;
-        }else{
-            int i = 0;
-            while(fgets(currentTask, sizeof(currentTask), taskFile) != NULL){
-                if(i == taskId){
-                    printf("closing task %d: %s", (i + 1), currentTask);
-                    fprintf(completeFile, "%s", currentTask);
-                }else{
-                    fprintf(tempFile, "%s", currentTask);
-                }
-                i++;
-            }
-            fclose(taskFile);
-            fclose(tempFile);
-            fclose(completeFile);
+        if(migrateTask(taskId, taskFile, completeFile, tempFile) == 1){
             unlink(taskFilePath);
             rename(tempFilePath, taskFilePath);
+            printf("closed task %d\n", (taskId + 1));
+        }else{
+            printf("ERROR :: unable to close task %d\n", (taskId + 1));
+            return 0;
         }
+    }
+    return 1;
+}
+
+int command_reopen(int taskId){
+    if(tinyTaskitInstanceExists() == 1){
+        char taskFilePath[512];
+        char tempFilePath[512];
+        char completeFilePath[512];
+        snprintf(taskFilePath, sizeof(taskFilePath), "./.tinytaskit/%s.tasks", config.userKey);
+        snprintf(completeFilePath, sizeof(completeFilePath), "./.tinytaskit/%s.complete", config.userKey);
+        snprintf(tempFilePath, sizeof(tempFilePath), "./.tinytaskit/%s.temp", config.userKey);
+        FILE *taskFile;
+        FILE *completeFile;
+        FILE *tempFile;
+        taskFile = fopen(taskFilePath, "a+");
+        completeFile = fopen(completeFilePath, "rw");
+        tempFile = fopen(tempFilePath, "a+");
+        if(migrateTask(taskId, completeFile, taskFile, tempFile) == 1){
+            unlink(completeFilePath);
+            rename(tempFilePath, completeFilePath);
+            printf("re-opened task %d\n", (taskId + 1));
+        }else{
+            printf("ERROR :: unable to re-open task %d\n", (taskId + 1));
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int migrateTask(int taskId, FILE *fromFile, FILE *toFile, FILE *tempFile){
+    char currentTask[512];
+    if(fromFile == NULL || toFile == NULL || tempFile == NULL){
+        printf("There was an error while attempting to migrate task\n");
+        return 0;
+    }else{
+        int i = 0;
+        while(fgets(currentTask, sizeof(currentTask), fromFile) != NULL){
+            if(i == taskId){
+                fprintf(toFile, "%s", currentTask);
+            }else{
+                fprintf(tempFile, "%s", currentTask);
+            }
+            i++;
+        }
+        fclose(fromFile);
+        fclose(tempFile);
+        fclose(toFile);
     }
     return 1;
 }
@@ -284,6 +319,12 @@ int run_command(int argc, char *argv[]){
     }else if(!strcmp(argv[1], "close")){
         if(argc > 2){
             return command_close(atoi(argv[2]) - 1);
+        }else{
+            return 0;
+        }
+    }else if(!strcmp(argv[1], "reopen")){
+        if(argc > 2){
+            return command_reopen(atoi(argv[2]) - 1);
         }else{
             return 0;
         }
