@@ -7,6 +7,8 @@ static void printInstructions(){
     printf("\tregister:\tregister yourself with an existing tinytaskit project\n");
     printf("\tadd:\t\tadd a task\n");
     printf("\tclose:\t\tclose a task as complete\n");
+    printf("\treopen:\t\treopen a previously closed task\n");
+    printf("\tdelete:\t\tdelete a task\n");
     printf("\tactive:\t\tlist all active tasks\n");
     printf("\tcomplete:\tlist all complete tasks\n");
 }
@@ -98,11 +100,8 @@ int loadConfig(){
     
     FILE *configFile = fopen(configFilePath, "r");
     
-    printf("loading config file\n");
-    
     if(configFile != NULL){
         if(fgets(rawUserConfig, sizeof(rawUserConfig), configFile) != NULL){
-            fputs(rawUserConfig, stdout);
             char *cp;
             char delimiter[] = ":";
             cp = strdup(rawUserConfig);
@@ -272,6 +271,37 @@ int command_active(){
                 //fputs(currentTask, stdout);
             }
             printf("\n");
+            fclose(taskFile);
+        }
+    }
+    return 1;
+}
+
+int command_delete(int taskId){
+    if(tinyTaskitInstanceExists() == 1){
+        char taskFilePath[512];
+        char tempFilePath[512];
+        char currentTask[512];
+        snprintf(taskFilePath, sizeof(taskFilePath), "./.tinytaskit/%s.tasks", config.userKey);
+        snprintf(tempFilePath, sizeof(tempFilePath), "./.tinytaskit/%s.temp", config.userKey);
+        FILE *taskFile;
+        FILE *tempFile;
+        taskFile = fopen(taskFilePath, "r");
+        tempFile = fopen(tempFilePath, "a+");
+        if(taskFile == NULL || tempFile == NULL){
+            printf("Error attempting to open TinyTaskit task file\n");
+            return 0;
+        }else{
+            int i = 0;
+            while(fgets(currentTask, sizeof(currentTask), taskFile) != NULL){
+                if(i != taskId) fprintf(tempFile, "%s", currentTask);
+                i++;
+            }
+            fclose(taskFile);
+            fclose(tempFile);
+            unlink(taskFilePath);
+            rename(tempFilePath, taskFilePath);
+            printf("Deleted Task %d\n", (taskId + 1));
         }
     }
     return 1;
@@ -325,6 +355,12 @@ int run_command(int argc, char *argv[]){
     }else if(!strcmp(argv[1], "reopen")){
         if(argc > 2){
             return command_reopen(atoi(argv[2]) - 1);
+        }else{
+            return 0;
+        }
+    }else if(!strcmp(argv[1], "delete")){
+        if(argc > 2){
+            return command_delete(atoi(argv[2]) - 1);
         }else{
             return 0;
         }
