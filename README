@@ -3,3 +3,6 @@
 +------------+
 
 libsha1 (https://github.com/dottedmag/libsha1)
+
+make
+make install
